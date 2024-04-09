@@ -17,8 +17,10 @@ def get_ltk(path=None):
 	"""
 	records = get_records(path=path)
 	cmds = get_cmds(records)
-	start_enc_cmds = filter(lambda (opcode, length, data): opcode == 0x2019, cmds)
-	ltks = map(lambda (opcode, length, data): binascii.hexlify(data)[-32:], start_enc_cmds)
+	#start_enc_cmds = filter(lambda (opcode, length, data): opcode == 0x2019, cmds)
+	start_enc_cmds = filter(lambda cmd: cmd[0] == 0x2019, cmds)
+	#ltks = map(lambda (opcode, length, data): binascii.hexlify(data)[-32:], start_enc_cmds)
+	ltks = map(lambda cmd: binascii.hexlify(cmd[2])[-32:], start_enc_cmds)
 	last_ltk = len(ltks) != 0 and ltks[-1] or ""
 	return "".join(map(str.__add__, last_ltk[1::2] ,last_ltk[0::2]))
 
@@ -29,8 +31,10 @@ def get_rand_addr(path=None):
 	"""
 	records = get_records(path=path)
 	cmds = get_cmds(records)
-	set_rand_addr = filter(lambda (opcode, length, data): opcode == 0x2005, cmds)
-	addrs = map(lambda (opcode, length, data): binascii.hexlify(data)[-12:], set_rand_addr)
+	#set_rand_addr = filter(lambda (opcode, length, data): opcode == 0x2005, cmds)
+	start_enc_cmds = filter(lambda cmd: cmd[0] == 0x2005, cmds)
+	#addrs = map(lambda (opcode, length, data): binascii.hexlify(data)[-12:], set_rand_addr)
+	addrs = map(lambda cmd: binascii.hexlify(cmd[2])[-12:], start_enc_cmds)
 	last_addr = len(addrs) != 0 and addrs[-1] or ""
 	return "".join(map(str.__add__, last_addr[1::2], last_addr[0::2]))
 
@@ -43,8 +47,10 @@ def get_records(path=None):
 
 def get_cmds(records):
 	hci_uarts = map(lambda record: hci_uart.parse(record[4]), records)
-	hci_cmds = filter(lambda (hci_type, hci_data): hci_type == hci_uart.HCI_CMD, hci_uarts)
-	return map(lambda (hci_type, hci_data): hci_cmd.parse(hci_data), hci_cmds)
+	#hci_cmds = filter(lambda (hci_type, hci_data): hci_type == hci_uart.HCI_CMD, hci_uarts)
+	hci_cmds = filter(lambda x: x[0] == hci_uart.HCI_CMD, hci_uarts)
+	#return map(lambda (hci_type, hci_data): hci_cmd.parse(hci_data), hci_cmds)
+	return map(lambda x: hci_cmd.parse(x[1]), hci_cmds)
 
 
 def _pull_log():
